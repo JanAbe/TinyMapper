@@ -21,5 +21,4 @@ buildNumber.properties
 .mvn/wrapper/maven-wrapper.jar
 
 # Custom
-Main.java
-Student.java
+local/

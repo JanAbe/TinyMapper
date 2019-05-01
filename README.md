@@ -10,36 +10,61 @@ Usage:
 // Make a new mapper of type T. In this case Student.
 var studentMapper = new TinyMapper<>(Student.class);
 
-// Use the mapper to map the resultSet to a Student
+// Use the mapper to map the resultSet to a Student.
 var student = studentMapper.map(resultSet);
 ```
 
 \
 POJO:
 
-Use the @Column annotation to specify the name of the column that corresponds to the field.
+Use the @Column annotation to specify the name of the column that corresponds to the field. \
+Or embed a POJO in another POJO with @Embed.
 ```java
 public class Student {
+
     @Column(name="id")
     private String id;
 
-    @Column(name="first_name")
-    private String firstName;
-
-    @Column(name="last_name")
-    private String lastName;
-
+    @Column(name="email_address")
+    private String email;
+    
+    @Embed
+    private FullName fullName;
+    
     ...
 ```
 
 \
-The POJO must also have an <ins>empty constructor</ins> and <ins>setters</ins> for each field.
+The POJO must have an <ins>empty constructor</ins> and <ins>setter methods</ins> for each field for TinyMapper to work.
 ```java
     public Student() {}
     
     public void setId(String id) {
         this.id = id;
     }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setFullName(FullName fullName) {
+        this.fullName = fullName;
+    }
+}
+```
+
+\
+The embedded class must still follow the POJO rules.
+```java
+public class FullName {
+    
+    @Column(name="firstname")
+    private String firstName;
+
+    @Column(name="lastname")
+    private String lastName;
+
+    public FullName() {}
 
     public void setFirstName(String firstName) {
         this.firstName = firstName;
@@ -55,7 +80,9 @@ The POJO must also have an <ins>empty constructor</ins> and <ins>setters</ins> f
 TODO:
 
 - Support inheritance
-- Support composition
+- ~~Support embedding~~
+- Support embedding multiple POJO's
+- Refactor code
 - Refactor Exception related code
 - Support omitted @Column() annotation, column name then equals field name
 - Create tests
