@@ -48,6 +48,7 @@ public class TinyMapper<T> {
         // variable that gets used by setters on the embeddedObject
         var val = new Object();
 
+        // Prepare the embeddedObject(s)
         // loop over all keys (these are all ClassNames)
         for (var clazz : embeddedInfo.keySet()) {
             // get the class that belongs to the ClassName, and create a new instance
@@ -67,14 +68,21 @@ public class TinyMapper<T> {
                 var setter = embeddedClass.getDeclaredMethod(setterName, valueClass);
                 setter.invoke(embeddedObject, val);
             }
+
+            for (var field : fieldToColumnToType.keySet()) {
+                // if the field is marked as @Embed -> call the setter method corresponding to this field, with the earlier made object as argument.
+                // check if clazz contains field, otherwise the setter for field gets called multiple times with different arguments that are not part of the method signature
+                // this is complete shitt.
+                if (embeddedFields.contains(field) && clazz.toLowerCase().contains(field.toLowerCase())) {
+                    instance.getClass().getDeclaredMethod(this.setMethod(field), embeddedObject.getClass()).invoke(instance, embeddedObject);
+                }
+            }
         }
 
         // loop over all fields of T
         for (var field : fieldToColumnToType.keySet()) {
-            // if the field is marked as @Embed -> call the setter method corresponding to this field, with the earlier made object as argument.
-            if (embeddedFields.contains(field)) {
-                instance.getClass().getDeclaredMethod(this.setMethod(field), embeddedObject.getClass()).invoke(instance, embeddedObject);
-            } else { // if the field is @Column -> call the setter method corresponding to this field on T, with the earlier made value as argument.
+            // if the field is @Column -> call the setter method corresponding to this field on T, with the earlier made value as argument.
+            if (!embeddedFields.contains(field)) {
                 value = this.cast(fieldToColumnToType.get(field), rs);
                 type.getDeclaredMethod(this.setMethod(field), String.class).invoke(instance, value);
             }
@@ -169,9 +177,13 @@ public class TinyMapper<T> {
      * </p>
      * @return Map(ClassName, Map(FieldName, Map(ColumnName, TypeName)))
      */
+    // alle attributen, van alle embedded klassen, worden gekoppeld aan de fields.
+    // dus de attributen van FullName worden gekoppeld aan zowel fullName als email
+    // de attributen van email worden gekoppeld aan zowel email als fullName.
+    // fullName: firstName, lastName, emailAddress
+    // en dit klopt natuurlijk niet, het moet beschouwd worden als twee losse dingen.
     private Map<String, Map<String, Map<String, String>>> parseEmbedded() {
         var map = new HashMap<String, Map<String, Map<String, String>>>();
-        var fieldToColumn = new HashMap<String, Map<String, String>>();
         String columnName;
         String typeName;
 
@@ -179,6 +191,7 @@ public class TinyMapper<T> {
             if (!field.isAnnotationPresent(Embed.class)) {
                 continue;
             }
+            var fieldToColumn = new HashMap<String, Map<String, String>>();
 
             for (Field childField : field.getType().getDeclaredFields()) {
                 if (!childField.isAnnotationPresent(Column.class)) {

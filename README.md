@@ -22,11 +22,11 @@ Or embed a POJO in another POJO with @Embed.
 ```java
 public class Student {
 
-    @Column(name="id")
+    @Column(name="student_id")
     private String id;
 
-    @Column(name="email_address")
-    private String email;
+    @Embed
+    private Email email;
     
     @Embed
     private FullName fullName;
@@ -43,7 +43,7 @@ The POJO must have an <ins>empty constructor</ins> and <ins>setter methods</ins>
         this.id = id;
     }
 
-    public void setEmail(String email) {
+    public void setEmail(Email email) {
         this.email = email;
     }
 
