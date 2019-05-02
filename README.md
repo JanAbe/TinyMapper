@@ -75,14 +75,3 @@ public class FullName {
     }
 }
 ```
-
-\
-TODO:
-
-- Support inheritance
-- ~~Support embedding~~
-- Support embedding multiple POJO's
-- Refactor code
-- Refactor Exception related code
-- Support omitted @Column() annotation, column name then equals field name
-- Create tests
