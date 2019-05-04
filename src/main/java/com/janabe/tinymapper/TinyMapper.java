@@ -45,6 +45,7 @@ public class TinyMapper<T> {
             var embedInstance = createInstance(field.getType());
             fillColumnFields(embedInstance, getAnnotatedFields(field.getType(), Column.class), resultSet);
             fillField(instance, field, embedInstance);
+            fillEmbedFields(embedInstance, getAnnotatedFields(field.getType(), Embed.class), resultSet);
         }
     }
 
