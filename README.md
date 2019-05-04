@@ -3,7 +3,7 @@
 A simple tool that automatically maps a ResultSet to a POJO, using the power of reflection.
 
 \
-Usage:
+#### Usage:
 ```java
 // Certain code has been omitted as to focus only on TinyMapper.
 
@@ -15,7 +15,7 @@ var student = studentMapper.map(resultSet);
 ```
 
 \
-Annotation Usage in POJO's:
+#### Annotation Usage in POJO's:
 
 Use the @Column annotation to specify the name of the column that corresponds to the field. \
 Or embed a POJO in another POJO with @Embed.
