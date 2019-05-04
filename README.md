@@ -15,7 +15,7 @@ var student = studentMapper.map(resultSet);
 ```
 
 \
-POJO:
+Annotation Usage in POJO's:
 
 Use the @Column annotation to specify the name of the column that corresponds to the field. \
 Or embed a POJO in another POJO with @Embed.
@@ -29,13 +29,13 @@ public class Student {
     private Email email;
     
     @Embed
-    private FullName fullName;
+    private Person person;
     
     ...
 ```
 
 \
-The POJO must have an <ins>empty constructor</ins> and <ins>setter methods</ins> for each field for TinyMapper to work.
+The POJO must have an <ins>empty constructor</ins> and a <ins>setter method</ins> for each field for TinyMapper to work.
 ```java
     public Student() {}
     
@@ -46,15 +46,28 @@ The POJO must have an <ins>empty constructor</ins> and <ins>setter methods</ins>
     public void setEmail(Email email) {
         this.email = email;
     }
-
-    public void setFullName(FullName fullName) {
-        this.fullName = fullName;
+    
+    public void setPerson(Person person) {
+        this.person = person;
     }
 }
 ```
 
 \
 The embedded class must still follow the POJO rules.
+```java
+public class Person {
+    @Embed
+    private FullName fullName;
+    
+    public Person() {}
+    
+    public void setFullName(FullName fullName) {
+        this.fullName = fullName;
+    }
+}
+```
+
 ```java
 public class FullName {
     
