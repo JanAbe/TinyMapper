@@ -57,6 +57,7 @@ The POJO must have an <ins>empty constructor</ins> and a <ins>setter method</ins
 The embedded class must still follow the POJO rules.
 ```java
 public class Person {
+
     @Embed
     private FullName fullName;
     
