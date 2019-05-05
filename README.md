@@ -1,9 +1,8 @@
 ## TinyMapper
 
-A simple tool that automatically maps a ResultSet to a POJO, using the power of reflection.
+A simple generic tool that automatically maps a ResultSet to a POJO, using the power of reflection and generics.
 
-
-#### Usage:
+#### Usage
 ```java
 // Certain code has been omitted as to focus only on TinyMapper.
 
@@ -14,12 +13,21 @@ var studentMapper = new TinyMapper<>(Student.class);
 var student = studentMapper.map(resultSet);
 ```
 
-<hr>
+#### Rules:
+| POJO                                                           |
+| ---------------------------------------------------------------|
+| - Each POJO should have an empty constructor                   |
+| - Each field should be annotated with either @Column or @Embed |
+| - Each field should have a corresponding setter method         |
 
-#### Annotation Usage in POJO's:
+#### Info
+| Annotation | Param | Function | 
+| ---------- | ----- |--------  |
+| @Column    | name  | Specify the name of the column that corresponds to this field |
+| @Embed     | -     | Mark when a field doesn't directly map to a column, but its values do |
 
-Use the @Column annotation to specify the name of the column that corresponds to the field. \
-Or embed a POJO in another POJO with @Embed.
+#### Annotation Examples:
+
 ```java
 public class Student {
 
@@ -32,12 +40,6 @@ public class Student {
     @Embed
     private Person person;
     
-    ...
-```
-
-\
-The POJO must have an <ins>empty constructor</ins> and a <ins>setter method</ins> for each field for TinyMapper to work.
-```java
     public Student() {}
     
     public void setId(String id) {
@@ -54,8 +56,6 @@ The POJO must have an <ins>empty constructor</ins> and a <ins>setter method</ins
 }
 ```
 
-\
-The embedded class must still follow the POJO rules.
 ```java
 public class Person {
 
