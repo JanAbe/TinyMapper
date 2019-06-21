@@ -13,6 +13,31 @@ var studentMapper = new TinyMapper<>(Student.class);
 var student = studentMapper.map(resultSet);
 ```
 
+---
+
+```java
+// A slightly more fleshed out example:
+
+// Make a new mapper of type T. In this case Student.
+var studentMapper = new TinyMapper<>(Student.class);
+var student = new Student();
+
+// Query everything, or just a subset!
+final var query = "SELECT * FROM Student WHERE id = ?";
+final var query1 = "SELECT firstname, lastname FROM Student WHERE id = ?";
+var statement = connection.prepareStatement(query);
+statement.setString(1, "some-id");
+var resultSet = statement.executeQuery();
+
+while (resultSet.next()) {
+    // Use the mapper to map the resultSet to a Student.
+    student = studentMapper.map(resultSet);
+}
+
+statement.close();
+resultSet.close();
+```
+
 #### Rules:
 | POJO                                                           |
 | ---------------------------------------------------------------|
@@ -24,7 +49,7 @@ var student = studentMapper.map(resultSet);
 | Annotation | Param | Function | 
 | ---------- | ----- |--------  |
 | @Column    | name  | Specify the name of the column that corresponds to this field |
-| @Embed     | -     | Mark when a field doesn't directly map to a column, but its values do |
+| @Embed     | -     | Mark when a field doesn't directly map to a column, but its values do. Doesn't support infinite embedding |
 
 #### Annotation Examples:
 
