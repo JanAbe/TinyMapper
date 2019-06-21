@@ -20,5 +20,11 @@ buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
 
+# vs code
+.vscode/
+.settings/
+.classpath
+.project
+
 # Custom
 local/
