@@ -8,7 +8,9 @@ import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class TinyMapper<T> {
@@ -24,28 +26,30 @@ public class TinyMapper<T> {
      * @return Newly created Object of type T, filled with data
      */
     public T map(ResultSet resultSet) {
-        var columnFields = getAnnotatedFields(type, Column.class);
-        var embedFields = getAnnotatedFields(type, Embed.class);
+        var queriedFields = getQueriedFields(resultSet);
+        var columnFields = getColumnFields(type, queriedFields);
+        var embedFields = getRootOfEmbedFields(type, getEmbedFields(type, queriedFields, new HashSet<>()));
         var instance = createInstance(type);
 
         fillColumnFields(instance, columnFields, resultSet);
-        fillEmbedFields(instance, embedFields, resultSet);
+        fillEmbedFields(instance, embedFields, resultSet, queriedFields);
 
         return (T) instance;
     }
 
     /**
-     * <p>Fill the fields marked with @Embed.</p>
+     * <p>Fill the queried fields that are marked with @Embed.</p>
      * @param instance Class containing fields marked with @Embed
-     * @param embedFields List of all fields marked with @Embed
+     * @param embedFields Set of all fields marked with @Embed
      * @param resultSet ResultSet used to obtain data from
+     * @param queriedFields Collection of all the field names that have been queried
      */
-    private void fillEmbedFields(Object instance, List<Field> embedFields, ResultSet resultSet) {
+    private void fillEmbedFields(Object instance, Set<Field> embedFields, ResultSet resultSet, Set<String> queriedFields) {
         for (Field field : embedFields) {
             var embedInstance = createInstance(field.getType());
-            fillColumnFields(embedInstance, getAnnotatedFields(field.getType(), Column.class), resultSet);
+            fillColumnFields(embedInstance, getColumnFields(field.getType(), queriedFields), resultSet);
             fillField(instance, field, embedInstance);
-            fillEmbedFields(embedInstance, getAnnotatedFields(field.getType(), Embed.class), resultSet);
+            fillEmbedFields(embedInstance, getEmbedFields(field.getType(), queriedFields, new HashSet<>()), resultSet, queriedFields);
         }
     }
 
@@ -55,7 +59,7 @@ public class TinyMapper<T> {
      * @param fields Fields of an instance you want filled
      * @param resultSet ResultSet used to obtain values from
      */
-    private void fillColumnFields(Object instance, List<Field> fields, ResultSet resultSet) {
+    private void fillColumnFields(Object instance, Set<Field> fields, ResultSet resultSet) {
         for (Field field : fields) {
             var result = transform(resultSet, field);
             var setter = getSetterOf(instance, field, result.getClass());
@@ -88,7 +92,7 @@ public class TinyMapper<T> {
      * <p>Transform the resultSet into the value that belongs to the provided columnField.</p>
      * @param resultSet ResultSet
      * @param columnField field marked with @Column
-     * @return the object that
+     * @return the object that 
      */
     private Object transform(ResultSet resultSet, Field columnField) {
         var castedObject = new Object();
@@ -189,13 +193,150 @@ public class TinyMapper<T> {
      * <p>Get all fields that are annotated with the provided Annotation
      * from the provided Class.</p>
      * @param _class some Class
-     * @return a list containing all fields marked with @Column
+     * @return a list containing all fields marked with the provided annotation
      */
-    private List<Field> getAnnotatedFields(Class<?> _class, Class<? extends Annotation> wantedAnnotation) {
+    private Set<Field> getAnnotatedFields(Class<?> _class, Class<? extends Annotation> wantedAnnotation) {
         var fields = Arrays.stream(_class.getDeclaredFields());
         return fields
                 .filter(field -> field.isAnnotationPresent(wantedAnnotation))
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * <p>Get all fields that are annotated with @Column and that are present in the queried fields.</p>
+     * @param _class Class you want the column fields from that are being queried
+     * @param queriedFields Set of names of the fields that are being queried
+     * @return Set of all fields that are annotated with @Column and who are actually being queried
+     */
+    private Set<Field> getColumnFields(Class<?> _class, Set<String> queriedFields) {
+        var wantedFields = new HashSet<Field>();
+
+        for (String queriedField : queriedFields) {
+            for (Field field : _class.getDeclaredFields()) {
+                if (field.isAnnotationPresent(Column.class) 
+                        && field.getAnnotation(Column.class).name().equals(queriedField)) {
+                    wantedFields.add(field);
+                }
+            }
+        }
+
+        return wantedFields;
+    }
+
+    /**
+     * <p> Get all fields that are annotated with @Embed and that are present in the queried fields.</p>
+     * @param _class Start point class from which you want all the embed anontated fields (that are queried)
+     * @param queriedFields Set of names of the fields that are being queried
+     * @param wantedFields Set containing all embed fields that are being queried, passed for recursive purposes
+     * @return Set containing all fields that annotated with @Embed and that are being queried.
+     */
+    private Set<Field> getEmbedFields(Class<?> _class, Set<String> queriedFields, Set<Field> wantedFields) {
+        var embedFields = getAnnotatedFields(_class, Embed.class);
+
+        for (Field embedField : embedFields) {
+            if (queriedFieldMatch(embedField.getType(), queriedFields)) {
+                wantedFields.add(embedField);
+            } else {
+                getEmbedFields(embedField.getType(), queriedFields, wantedFields);
+            }
+        }
+
+        return wantedFields;
+    }
+
+    /**
+     * <p>Get the root embed field for each embed fields that is being queried.
+     * It only supports two levels of @Embed fields. 
+     * e.g. Student { 
+     *      @Embed
+     *      Person person;
+     * }
+     * Person {
+     *      @Embed
+     *      FullName fullName;
+     * }
+     * 
+     * FullName can not have a field that is annotated with @Embed.
+     * </p>
+     * @param _class Root class
+     * @param embedFields Set of all embed fields that are being queried
+     * @return Set of all root fields that are annotated with @Embed.
+     */
+    private Set<Field> getRootOfEmbedFields(Class<?> _class, Set<Field> embedFields) {
+        Set<Field> roots = new HashSet<>();
+
+        for (Field embedField : getAnnotatedFields(_class, Embed.class)) {
+            if (contains(embedFields, embedField.getName())) {
+                roots.add(embedField);
+            } else {
+                for (Field embedField1 : getAnnotatedFields(embedField.getType(), Embed.class)) {
+                    if (contains(embedFields, embedField1.getName())) {
+                        roots.add(embedField);
+                    } 
+                }
+            }
+        }
+
+        return roots;
+    }
+    
+    /**
+     * <p>Get all names of the fields that have been queried.</p>
+     * @param resultSet ResultSet of the executed query
+     * @return All names of the queried fields that are present in the resultSet
+     */
+    private Set<String> getQueriedFields(ResultSet resultSet) {
+        Set<String> queriedFields = new HashSet<String>();
+
+        try {
+            var metaData = resultSet.getMetaData();
+            var nrOfColumns = metaData.getColumnCount();
+
+            for (int i=1; i<=nrOfColumns; i++) {
+                var columnName = metaData.getColumnName(i);
+                queriedFields.add(columnName);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return queriedFields;
+    }
+    
+    /**
+     * <p>Helper method to check if the provided class has at least one field that is annotated with @Column and that matches a field in the queried fields set.<p>
+     * @param _class
+     * @param queriedFields
+     * @return
+     */
+    private boolean queriedFieldMatch(Class<?> _class, Set<String> queriedFields) {
+        var matchFound = false;
+        for (String queriedField : queriedFields) {
+            for (Field field : _class.getDeclaredFields()) {
+                if (field.isAnnotationPresent(Column.class) 
+                        && field.getAnnotation(Column.class).name().equals(queriedField)) {
+                    matchFound = true;
+                    return matchFound;
+                }
+            }
+        }
+
+        return matchFound;
+    }
+
+    /**
+     * <p>Helper method to check if a list of embed annotated fields has atleast one field with the provided name.</p>
+     * @param embedFields Set of fields that are marked with @Embed.
+     * @param name The name of a field that is being queried.
+     * @return True if the name matches one of the embed fields. False otherwise.
+     */
+    private boolean contains(Set<Field> embedFields, String name) {
+        for (Field f : embedFields) {
+            if (f.getName().equals(name)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
-
