@@ -2,9 +2,6 @@
 
 A simple generic tool that automatically maps a ResultSet to a POJO, using the power of reflection and generics.
 
-#### Why
-I created TinyMapper mostly to see how tools such as Hibernate automatically map a resultset to a Java object. Creating such a tool, albeit a way simpler variant, taught me a lot. Before this project I had never worked with Annotations and Generics.
-
 #### Usage
 ```java
 // Certain code has been omitted as to focus only on TinyMapper.
@@ -116,3 +113,6 @@ public class FullName {
     }
 }
 ```
+
+#### Why
+I created TinyMapper mostly to see how tools such as Hibernate automatically map a resultset to a Java object. Creating such a tool, albeit a way simpler variant, taught me a lot. Before this project I had never worked with Annotations and Generics. Also this way you don't need to manually map a resultset to a POJO ;)
