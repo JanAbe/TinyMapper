@@ -4,7 +4,7 @@ A simple generic tool that automatically maps a ResultSet to a POJO, using the p
 
 #### Usage
 ```java
-// Certain code has been omitted as to focus only on TinyMapper, see the bottom of the file for a bigger example.
+// Certain code has been omitted as to focus only on TinyMapper, see bottom for a larger example.
 
 // Make a new mapper of type T. In this case Student.
 var studentMapper = new TinyMapper<>(Student.class);
