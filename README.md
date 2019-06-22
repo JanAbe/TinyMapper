@@ -4,36 +4,13 @@ A simple generic tool that automatically maps a ResultSet to a POJO, using the p
 
 #### Usage
 ```java
-// Certain code has been omitted as to focus only on TinyMapper.
+// Certain code has been omitted as to focus only on TinyMapper, see the bottom of the file for a bigger example.
 
 // Make a new mapper of type T. In this case Student.
 var studentMapper = new TinyMapper<>(Student.class);
 
 // Use the mapper to map the resultSet to a Student.
 var student = studentMapper.map(resultSet);
-```
-
-```java
-// A slightly more fleshed out example:
-
-// Make a new mapper of type T. In this case Student.
-var studentMapper = new TinyMapper<>(Student.class);
-var student = new Student();
-
-// Query everything, or just a subset!
-final var query = "SELECT * FROM Student WHERE id = ?";
-final var query1 = "SELECT firstname, lastname FROM Student WHERE id = ?";
-var statement = connection.prepareStatement(query);
-statement.setString(1, "some-id");
-var resultSet = statement.executeQuery();
-
-while (resultSet.next()) {
-    // Use the mapper to map the resultSet to a Student.
-    student = studentMapper.map(resultSet);
-}
-
-statement.close();
-resultSet.close();
 ```
 
 #### Rules:
@@ -112,6 +89,29 @@ public class FullName {
         this.lastName = lastName;
     }
 }
+```
+
+```java
+// A slightly more fleshed out example:
+
+// Make a new mapper of type T. In this case Student.
+var studentMapper = new TinyMapper<>(Student.class);
+var student = new Student();
+
+// Query everything, or just a subset!
+final var query = "SELECT * FROM Student WHERE id = ?";
+final var query1 = "SELECT firstname, lastname FROM Student WHERE id = ?";
+var statement = connection.prepareStatement(query);
+statement.setString(1, "some-id");
+var resultSet = statement.executeQuery();
+
+while (resultSet.next()) {
+    // Use the mapper to map the resultSet to a Student.
+    student = studentMapper.map(resultSet);
+}
+
+statement.close();
+resultSet.close();
 ```
 
 #### Why
